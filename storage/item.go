@@ -6,6 +6,7 @@ import (
 	"html"
 	"strings"
 	"time"
+
 	xhtml "golang.org/x/net/html"
 )
 
@@ -55,6 +56,7 @@ type Item struct {
 	DateUpdated *time.Time `json:"date_updated"`
 	Status      ItemStatus `json:"status"`
 	Image       string     `json:"image"`
+	Enclosure   string     `json:"enclosure"`
 }
 
 type ItemFilter struct {
@@ -63,16 +65,16 @@ type ItemFilter struct {
 	Status   *ItemStatus
 	Search   *string
 
-	IDs      *[]int64
-	SinceID  *int64
-	MaxID    *int64
+	IDs     *[]int64
+	SinceID *int64
+	MaxID   *int64
 }
 
 type MarkFilter struct {
 	FolderID *int64
 	FeedID   *int64
-	
-	Before   *time.Time
+
+	Before *time.Time
 }
 
 func (s *Storage) CreateItems(items []Item) bool {
@@ -97,15 +99,15 @@ func (s *Storage) CreateItems(items []Item) bool {
 				guid, feed_id, title, link, description,
 				content, author,
 				date, date_updated, date_arrived,
-				status, image
+				status, image, enclosure
 			)
-			values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			on conflict (feed_id, guid) do update set
 			date_updated = ?, date_arrived = ?`,
 			item.GUID, item.FeedId, html.UnescapeString(item.Title), item.Link, item.Description,
 			item.Content, item.Author,
 			item.Date, item.DateUpdated, now,
-			UNREAD, item.Image,
+			UNREAD, item.Image, item.Enclosure,
 			// upsert values
 			item.DateUpdated, now,
 		)
@@ -158,7 +160,7 @@ func listQueryPredicate(filter ItemFilter) (string, []interface{}) {
 			qmarks[i] = "?"
 			idargs[i] = id
 		}
-		cond = append(cond, "i.id in (" + strings.Join(qmarks, ",") + ")")
+		cond = append(cond, "i.id in ("+strings.Join(qmarks, ",")+")")
 		args = append(args, idargs...)
 	}
 	if filter.SinceID != nil {
@@ -194,7 +196,7 @@ func (s *Storage) ListItems(filter ItemFilter, offset, limit int, newestFirst bo
 	query := fmt.Sprintf(`
 		select
 			i.id, i.guid, i.feed_id, i.title, i.link, i.description,
-			i.content, i.author, i.date, i.date_updated, i.status, i.image
+			i.content, i.author, i.date, i.date_updated, i.status, i.image, i.enclosure
 		from items i
 		join feeds f on f.id = i.feed_id
 		where %s
@@ -221,6 +223,7 @@ func (s *Storage) ListItems(filter ItemFilter, offset, limit int, newestFirst bo
 			&x.DateUpdated,
 			&x.Status,
 			&x.Image,
+			&x.Enclosure,
 		)
 		if err != nil {
 			s.log.Print(err)

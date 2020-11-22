@@ -2,9 +2,10 @@ package storage
 
 import (
 	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var initQuery string = `
@@ -43,7 +44,8 @@ create table if not exists items (
  date_arrived   datetime,
  status         integer,
  image          text,
- search_rowid   integer
+ search_rowid   integer,
+ enclosure      text
 );
 
 create index if not exists idx_item_feed_id on items(feed_id);

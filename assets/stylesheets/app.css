@@ -440,6 +440,9 @@ select.form-control:not([multiple]):not([size]) {
 .content h6 {
   font-size: 1rem;
 }
+.content audio {
+  width: 100%;
+}
 
 /* theme: light */
 

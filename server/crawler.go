@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/mmcdole/gofeed"
-	"github.com/nkanaev/yarr/storage"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/mmcdole/gofeed"
+	"github.com/nkanaev/yarr/storage"
 )
 
 type FeedSource struct {
@@ -237,6 +238,10 @@ func convertItems(items []*gofeed.Item, feed storage.Feed) []storage.Item {
 		if item.Author != nil {
 			author = item.Author.Name
 		}
+		enclosureURL := ""
+		if item.Enclosures != nil && len(item.Enclosures) > 0 {
+			enclosureURL = item.Enclosures[0].URL
+		}
 		result[i] = storage.Item{
 			GUID:        item.GUID,
 			FeedId:      feed.Id,
@@ -249,6 +254,7 @@ func convertItems(items []*gofeed.Item, feed storage.Feed) []storage.Item {
 			DateUpdated: item.UpdatedParsed,
 			Status:      storage.UNREAD,
 			Image:       imageURL,
+			Enclosure:   enclosureURL,
 		}
 	}
 	return result

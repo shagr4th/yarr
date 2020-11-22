@@ -267,6 +267,7 @@
                     <time>{{ formatDate(itemSelectedDetails.date) }}</time>
                 </div>
                 <hr>
+                <audio controls v-if="itemSelectedDetails.enclosure" v-bind:src="itemSelectedDetails.enclosure"></audio>
                 <div v-html="itemSelectedContent"></div>
             </div>
         </div>
