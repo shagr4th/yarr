@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -239,8 +240,13 @@ func convertItems(items []*gofeed.Item, feed storage.Feed) []storage.Item {
 			author = item.Author.Name
 		}
 		enclosureURL := ""
-		if item.Enclosures != nil && len(item.Enclosures) > 0 {
-			enclosureURL = item.Enclosures[0].URL
+		if item.Enclosures != nil {
+			for _, enclosure := range item.Enclosures {
+				if strings.ToLower(enclosure.Type) == "audio/mpeg" {
+					enclosureURL = enclosure.URL
+					break
+				}
+			}
 		}
 		result[i] = storage.Item{
 			GUID:        item.GUID,
