@@ -2,6 +2,11 @@
 
 var TITLE = document.title
 
+function authenticated() {
+  return /auth=.+/g.test(document.cookie)
+
+}
+
 var FONTS = [
   "Arial",
   "Courier New",
@@ -171,6 +176,8 @@ var vm = new Vue({
         'size': 1,
       },
       'refreshRate': undefined,
+      'authenticated': authenticated(),
+      'feed_errors': {},
     }
   },
   computed: {
@@ -523,6 +530,12 @@ var vm = new Vue({
     showSettings: function(settings) {
       this.settings = settings
       this.$bvModal.show('settings-modal')
+
+      if (settings === 'manage') {
+        api.feeds.list_errors().then(function(errors) {
+          vm.feed_errors = errors
+        })
+      }
     },
     resizeFeedList: function(width) {
       this.feedListWidth = Math.min(Math.max(200, width), 700)

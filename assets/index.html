@@ -95,6 +95,11 @@
                         <span class="icon mr-1">{% inline "upload.svg" %}</span>
                         Export
                     </b-dropdown-item>
+                    <b-dropdown-divider v-if="authenticated"></b-dropdown-divider>
+                    <b-dropdown-item-button v-if="authenticated">
+                        <span class="icon mr-1">{% inline "log-out.svg" %}</span>
+                        Log out
+                    </b-dropdown-item-button>
                 </b-dropdown>
             </div>
             <div class="p-2 overflow-auto border-top flex-grow-1">
@@ -334,6 +339,11 @@
                             <span class="icon mr-2" v-else><img v-lazy="'/api/feeds/'+feed.id+'/icon'" alt=""></span>
                             {{ feed.title }}
                         </div>
+                        <span class="icon flex-shrink-0 mx-2"
+                              v-b-tooltip.hover.top="feed_errors[feed.id]"
+                              v-if="feed_errors[feed.id]">
+                            {% inline "alert-circle.svg" %}
+                        </span>
                         <div class="flex-shrink-0">
                             <b-dropdown right no-caret lazy variant="link" class="settings-dropdown" toggle-class="text-decoration-none">
                                 <template v-slot:button-content>

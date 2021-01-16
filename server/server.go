@@ -20,6 +20,9 @@ type Handler struct {
 	// auth
 	Username    string
 	Password    string
+	// https
+	CertFile    string
+	KeyFile     string
 }
 
 func New(db *storage.Storage, logger *log.Logger, addr string) *Handler {
@@ -37,10 +40,20 @@ func New(db *storage.Storage, logger *log.Logger, addr string) *Handler {
 func (h *Handler) Start() {
 	h.startJobs()
 	s := &http.Server{Addr: h.Addr, Handler: h}
-	err := s.ListenAndServe()
+
+	var err error
+	if h.CertFile != "" && h.KeyFile != "" {
+		err = s.ListenAndServeTLS(h.CertFile, h.KeyFile)
+	} else {
+		err = s.ListenAndServe()
+	}
 	if err != http.ErrServerClosed {
 		h.log.Fatal(err)
 	}
+}
+
+func unsafeMethod(method string) bool {
+	return method == "POST" || method == "PUT" || method == "DELETE"
 }
 
 func (h Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -51,6 +64,10 @@ func (h Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if h.requiresAuth() && !route.manualAuth {
+		if unsafeMethod(req.Method) && req.Header.Get("X-Requested-By") != "yarr" {
+			rw.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		if !userIsAuthenticated(req, h.Username, h.Password) {
 			rw.WriteHeader(http.StatusUnauthorized)
 			return
@@ -86,6 +103,7 @@ func (h *Handler) startJobs() {
 				atomic.AddInt32(h.queueSize, -1)
 				if err != nil {
 					h.log.Printf("Failed to fetch %s (%d): %s", feed.FeedLink, feed.Id, err)
+					h.db.SetFeedError(feed.Id, err)
 					continue
 				}
 				h.db.CreateItems(items)
@@ -151,6 +169,7 @@ func (h Handler) requiresAuth() bool {
 
 func (h *Handler) fetchAllFeeds() {
 	h.log.Print("Refreshing all feeds")
+	h.db.ResetFeedErrors()
 	for _, feed := range h.db.ListFeeds() {
 		h.fetchFeed(feed)
 	}

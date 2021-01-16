@@ -17,10 +17,12 @@ var Version string = "0.0"
 var GitHash string = "unknown"
 
 func main() {
-	var addr, db, auth string
+	var addr, db, authfile, certfile, keyfile string
 	var ver bool
 	flag.StringVar(&addr, "addr", "127.0.0.1:7070", "address to run server on")
-	flag.StringVar(&auth, "auth", "", "path to a file containing username:password")
+	flag.StringVar(&authfile, "auth-file", "", "path to a file containing username:password")
+	flag.StringVar(&certfile, "cert-file", "", "path to cert file for https")
+	flag.StringVar(&keyfile, "key-file", "", "path to key file for https")
 	flag.StringVar(&db, "db", "", "storage file path")
 	flag.BoolVar(&ver, "version", false, "print application version")
 	flag.Parse()
@@ -45,9 +47,11 @@ func main() {
 		db = filepath.Join(storagePath, "storage.db")
 	}
 
+	logger.Printf("using db file %s", db)
+
 	var username, password string
-	if auth != "" {
-		f, err := os.Open(auth)
+	if authfile != "" {
+		f, err := os.Open(authfile)
 		if err != nil {
 			logger.Fatal("Failed to open auth file: ", err)
 		}
@@ -65,6 +69,10 @@ func main() {
 		}
 	}
 
+	if (certfile != "" || keyfile != "") && (certfile == "" || keyfile == "") {
+		logger.Fatalf("Both cert & key files are required")
+	}
+
 	store, err := storage.New(db, logger)
 	if err != nil {
 		logger.Fatal("Failed to initialise database: ", err)
@@ -72,11 +80,18 @@ func main() {
 
 	srv := server.New(store, logger, addr)
 
+	proto := "http"
+	if certfile != "" && keyfile != "" {
+		srv.CertFile = certfile
+		srv.KeyFile = keyfile
+		proto = "https"
+	}
+
 	if username != "" && password != "" {
 		srv.Username = username
 		srv.Password = password
 	}
 
-	logger.Printf("starting server at http://%s", addr)
+	logger.Printf("starting server at %s://%s", proto, addr)
 	platform.Start(srv)
 }
