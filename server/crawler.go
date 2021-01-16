@@ -122,6 +122,10 @@ func discoverFeed(candidateUrl string) (*gofeed.Feed, *[]FeedSource, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	if len(content) > 3 && content[0] == 239 && content[1] == 187 && content[2] == 191 {
+		// BOM UTF-8
+		content = content[3:]
+	}
 
 	// Try to feed into parser
 	feedparser := gofeed.NewParser()
