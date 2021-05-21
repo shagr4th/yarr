@@ -163,14 +163,13 @@ func (s *Storage) ListItems(filter ItemFilter, offset, limit int, newestFirst bo
 	if err != nil {
 		log.Print(err)
 		return result
-			&x.DateUpdated,
-			&x.Status,
-			&x.Image,
-=======
+	}
+	for rows.Next() {
+		var x Item
+		err = rows.Scan(
 			&x.Id, &x.GUID, &x.FeedId,
 			&x.Title, &x.Link, &x.Date,
 			&x.Status, &x.ImageURL, &x.AudioURL,
->>>>>>> upstream/master:src/storage/item.go
 		)
 		if err != nil {
 			log.Print(err)
